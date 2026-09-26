@@ -1,0 +1,1 @@
+import{r as e}from"./rolldown-runtime-W7wSyTde.js";import{Qu as t}from"./ui-DayadUtz.js";var n=e(t(),1);function r(e,t){let[r,i]=(0,n.useState)(()=>({scn:e,value:e?t(e):null})),a=t=>i({scn:e,value:t});if(e!==r.scn){let n=e?t(e):null;return i({scn:e,value:n}),[n,a]}return[r.value,a]}export{r as t};
