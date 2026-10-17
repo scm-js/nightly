@@ -1,0 +1,1 @@
+import{a as e,f as t,m as n,u as r}from"./store-DJQGgFkr.js";function i(i){let a=e(i);return n(i.from)||a.id===r.id?`remastered`:t(a.id)?i.staredit||/^https?:\/\//i.test(i.from)?`download`:`classic`:`mod`}export{i as t};
