@@ -1,0 +1,1 @@
+import{r as e}from"./rolldown-runtime-W7wSyTde.js";import{Im as t,Nm as n,cr as r,js as i,mr as a}from"./ui-Dt3xWoeD.js";var o=e(t(),1);function s(){let e=n(i),[t,s]=(0,o.useState)(()=>{let e=a();return{stock:e,loading:e===null}});return(0,o.useEffect)(()=>{let e=!1;return r().then(t=>{e||s({stock:t,loading:!1})}),()=>{e=!0}},[e]),t}export{s as t};
