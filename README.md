@@ -1,14 +1,19 @@
 # nightly
 
-The nightly web build of [scmJS](https://github.com/scm-js/scm-js), served at
-[nightly.editor.scmjs.dev](https://nightly.editor.scmjs.dev).
+The nightly web build of [scmJS](https://github.com/scm-js/scm-js), the browser-based
+StarCraft: Brood War map editor. It is served at
+[scmjs.dev/nightly](https://scmjs.dev/nightly/) and rebuilt every night from the editor's
+`main` branch, for trying what is in development.
 
-Nothing here is written by hand. The `nightly-site` job in scm-js/scm-js's `build.yml`
-unpacks the web zip the nightly release carries — the same bundle, never a second build —
-and force-pushes it to the `gh-pages` branch as a single orphan commit, so this repository
-stays the size of one bundle rather than growing by that much every night. That branch is
-what GitHub Pages serves; the `CNAME` in it is what holds the domain.
+Nothing here is written by hand. Each night the `nightly-site` job in the editor's
+`build.yml` builds the same commit as the nightly installers and force-pushes it to this
+repository's `gh-pages` branch. Each push is a single orphan commit, so the repository
+stays the size of one build. The editor is in the branch's `nightly/` folder.
 
-The released editor is at [editor.scmjs.dev](https://editor.scmjs.dev), built from the
-newest `v*` tag. The two are separate origins, so the nightly asks for the game data again
-and keeps its own settings, plugins and recent files.
+The old address, nightly.editor.scmjs.dev, is still served from this branch. Its pages send
+you on to the same path under scmjs.dev/nightly and carry your settings over.
+
+The nightly keeps its own settings, plugins and sign-in. It shares the game's graphics with
+the released editor, so you add them once for both. The released editor is at
+[scmjs.dev/editor](https://scmjs.dev/editor/), built from the newest `v*` tag.
+[docs/installing.md](https://docs.scmjs.dev/installing/) has the details.
