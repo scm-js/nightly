@@ -1,0 +1,1 @@
+var e=/^(stardat|broodat|patch_rt)\.mpq$/i,t=e=>/^stardat/i.test(e)?0:/^broodat/i.test(e)?1:2;function n(t){return e.test(t.split(/[\\/]/).pop()??``)}function r(e){return[...e].sort((e,n)=>t(e.name)-t(n.name)||e.name.localeCompare(n.name))}export{r as n,n as t};

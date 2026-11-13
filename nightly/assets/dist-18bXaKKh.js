@@ -1,0 +1,1 @@
+import{x as e}from"./dist-JEzbyG-w.js";export{e as renderMessage};
