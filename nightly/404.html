@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+  <head><meta name="robots" content="noindex" />
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/nightly/favicon.svg" />
+    <link rel="apple-touch-icon" href="/nightly/icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>scmJS — StarCraft Scenario Editor</title>
+    <!--
+      What a search result or a pasted link shows for the editor itself. A shared map's link
+      (/map/…, /share/…) on scmjs.dev/editor gets its own title, description and picture from
+      the link-previews worker, which takes these out first so a reader sees only the map's.
+    -->
+    <meta
+      name="description"
+      content="A free, open source StarCraft and Brood War map editor that runs in the browser. Opens .scm, .scx and .chk maps and saves maps the game will play."
+    />
+    <meta property="og:site_name" content="scmJS" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="scmJS — a StarCraft: Brood War map editor" />
+    <meta
+      property="og:description"
+      content="A free, open source StarCraft and Brood War map editor that runs in the browser."
+    />
+    <meta property="og:image" content="https://scmjs.dev/images/og.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <!--
+      Preferences ▸ View ▸ Interface size, on the page before anything paints, so the boot
+      splash below and the editor's first frame are already at it (styles/size.css keys on
+      the attribute). components/ui/interfaceSize.ts#applyInterfaceSize does the same from
+      then on; keep the two in step (tests/interfaceSize.test.ts runs this script). The key
+      is the hosted nightly's own there (vite.config.ts fills it in).
+    -->
+    <script>
+      (function () {
+        try {
+          var size = JSON.parse(localStorage.getItem("scmjs-nightly.prefs") || "{}").interfaceSize;
+          if (size !== 115 && size !== 130) return;
+          document.documentElement.setAttribute("data-ui-size", String(size));
+          document.documentElement.style.setProperty("--ui-zoom", String(size / 100));
+        } catch (e) {}
+      })();
+    </script>
+    <!--
+      The splash before the splash. This paints as soon as the HTML is parsed — before the
+      stylesheet arrives, before the ~1 MB module bundle evaluates, before React mounts — and
+      that is what decides how soon the desktop window appears at all: `desktop/main.ts` keeps
+      it hidden until the renderer's first paint, so without this the whole launch is a blank
+      screen until React's first commit.
+
+      It is deliberately self-contained: its own class names and every value inline, so it
+      owes nothing to `styles/splash.css` (which in `npm run dev` does not exist until the
+      bundle runs, and would leave this as unstyled text). The values are copied from there —
+      it is the splash card in its initial state, before the canvas has drawn a frame — so
+      change both together or the handover stops being invisible. `SplashScreen` drops this
+      node in a layout effect the moment it has mounted (`splash/bootSplash.ts`).
+    -->
+    <style>
+      html, body { margin: 0; height: 100%; background: #12151b; }
+      #boot-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 300;
+        /* base.css's own resets and body type, spelled out: without them the title and
+           subtitle inherit the UA's serif, the card measures content-box and the footer
+           lines sit on a different leading, so the handover is a visible jump. */
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.35;
+        -webkit-font-smoothing: antialiased;
+        font-variant-numeric: tabular-nums;
+        display: grid;
+        place-items: center;
+        background: rgb(6, 4, 14);
+      }
+      #boot-splash, #boot-splash *, #boot-splash *::before, #boot-splash *::after {
+        box-sizing: border-box;
+      }
+      #boot-splash .card {
+        position: relative;
+        width: min(520px, 90vmin);
+        aspect-ratio: 4 / 5;
+        display: flex;
+        flex-direction: column;
+        background:
+          radial-gradient(ellipse at 50% 25%, rgba(255, 95, 162, 0.06), transparent 60%),
+          radial-gradient(ellipse at 80% 90%, rgba(160, 100, 240, 0.04), transparent 55%),
+          linear-gradient(180deg, #120818, #08040e);
+        border: 1px solid rgba(255, 95, 162, 0.15);
+        border-radius: 8px;
+        box-shadow:
+          0 0 0 1px rgba(0, 0, 0, 0.9),
+          inset 0 0 0 1px rgba(255, 95, 162, 0.08),
+          0 30px 100px rgba(0, 0, 0, 0.85),
+          0 0 80px rgba(255, 95, 162, 0.06);
+        overflow: hidden;
+      }
+      #boot-splash .center {
+        position: relative;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        padding-bottom: 16px;
+        text-align: center;
+      }
+      #boot-splash h1 {
+        margin: 0;
+        font-size: clamp(40px, 10vmin, 56px);
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        padding-left: 0.18em;
+        line-height: 1;
+        color: #ff5fa2;
+        text-shadow:
+          0 0 30px rgba(255, 95, 162, 0.5),
+          0 0 80px rgba(255, 95, 162, 0.15),
+          0 2px 0 rgba(0, 0, 0, 0.7);
+      }
+      #boot-splash h1 span { color: #dde2ea; }
+      #boot-splash .sub {
+        margin-top: 10px;
+        font-size: 11px;
+        letter-spacing: 0.35em;
+        padding-left: 0.35em;
+        text-transform: uppercase;
+        color: #a064f0;
+        text-shadow: 0 0 20px rgba(160, 100, 240, 0.4);
+      }
+      #boot-splash .bottom {
+        position: relative;
+        padding: 0 28px 22px;
+        background: linear-gradient(180deg, transparent, rgba(8, 4, 14, 0.85) 20%, rgba(8, 4, 14, 0.95));
+        font-family: "Cascadia Mono", "JetBrains Mono", ui-monospace, Consolas, Menlo, monospace;
+        font-size: 10.5px;
+        color: #99a2b3;
+      }
+      #boot-splash .log {
+        height: 64px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        overflow: hidden;
+      }
+      #boot-splash .log div {
+        line-height: 1.45;
+        font-size: 10px;
+        color: #ffbedc;
+      }
+      #boot-splash .log div::after {
+        content: "▍";
+        color: #ff5fa2;
+        padding-left: 0.4em;
+        animation: boot-blink 1s step-end infinite;
+      }
+      @keyframes boot-blink { 0% { opacity: 1 } 50% { opacity: 0 } }
+      #boot-splash .bar {
+        margin-top: 10px;
+        height: 2px;
+        background: rgba(255, 95, 162, 0.1);
+        border-radius: 1px;
+      }
+      #boot-splash .foot {
+        margin-top: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 10px;
+      }
+      #boot-splash .foot .version { letter-spacing: 0.12em; color: #b43c6e; }
+      #boot-splash .foot .author { letter-spacing: 0.08em; color: #5d6675; }
+      /* The interface size, as size.css has it for .splash-card. */
+      :root[data-ui-size] #boot-splash .card {
+        zoom: var(--ui-zoom);
+        width: min(520px, 90vmin / var(--ui-zoom), 72vh / var(--ui-zoom));
+      }
+      #boot-splash .skip {
+        margin-top: 6px;
+        text-align: center;
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        color: #5d6675;
+        opacity: 0.6;
+      }
+    </style>
+    <!--
+      Cloudflare Web Analytics: visits and referrers, no cookies. Only on the hosted
+      sites — the same bundle is the release zip, the container image and the desktop app
+      (served from `scmjs://`), and none of those may report, so the switch is the
+      hostname rather than a build flag. A fork on its own domain matches nothing either.
+    -->
+    <script>
+      (function () {
+        var token = {
+          // The site's own token: the editor is a path of it (scmjs.dev/editor/).
+          "scmjs.dev": "4f6f300eb17c49e8b16331e1e96f6b2a",
+          // The address the editor had, for as long as it still serves it.
+          "editor.scmjs.dev": "84b275d150b84a8294f735b811518112",
+          "nightly.editor.scmjs.dev": "3411da8934ed49829502fc55b16ff84b",
+        }[location.hostname];
+        if (!token) return;
+        var s = document.createElement("script");
+        s.defer = true;
+        s.src = "https://static.cloudflareinsights.com/beacon.min.js";
+        s.setAttribute("data-cf-beacon", JSON.stringify({ token: token }));
+        document.head.appendChild(s);
+      })();
+    </script>
+    <!--
+      Our own visit count: the script at /_e.js and the address it sends to are the
+      front-door worker's (scm-js/cloudflare-link-previews), and the numbers are on the
+      scmjs.dev server's /admin page. No cookies and no identifier; the site's privacy page
+      says what is sent. Only on the hosted editor, for the same reason as above (the script
+      checks the host again itself).
+    -->
+    <script>
+      (function () {
+        if (location.hostname !== "scmjs.dev") return;
+        var s = document.createElement("script");
+        s.defer = true;
+        s.src = "/_e.js";
+        document.head.appendChild(s);
+      })();
+    </script>
+    <script type="module" crossorigin src="/nightly/assets/main-BxQu7DIO.js"></script>
+    <link rel="modulepreload" crossorigin href="/nightly/assets/rolldown-runtime-W7wSyTde.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/modulepreload-polyfill-P2Xu9kJm.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/dist-GJcH1wHX.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/i18n-DqSFfLtE.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/preload-helper-H55Wlrak.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/source-CJ0IQ4bl.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/ui-tyQSi_2x.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/iscript-BK5rNY2D.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/tilesets-GZ9KxKD3.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/pluginAtoms-BYMy5C0O.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/circle-check-afDyNXdJ.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/info-C3UnAikG.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/triangle-alert-DNJSwXCk.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/src-D534u0ab.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/cuwp-CDoTqvUZ.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/textColors-DwtPj-Fw.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/validate-CL0B1TFF.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/startLocations-CJgIo5EF.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/mapIo-Kb2y7LYw.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/mapBuild-iEuDQXKK.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/documentActions-DonNL3xw.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/borrow-rW_Yo72F.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/pieces-CvJxEYF5.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/piecePick-COlQI9Kr.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/terrain-DmYzZjWw.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/dataSetTerrain-2fewSPmR.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/sprites-mdb0bZO4.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/archives-fV8YHhjS.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/install-DHPjHMix.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/mapImage-K57zv__i.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/gameData-BG9JzFF9.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/switches-BJePaK2O.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/strings-BNLBmj4N.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/exchange-DAakhyPc.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/testMap-B_38EGf1.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/claims-BaZZ1T4H.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/statistics-CB2SfClM.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/find-CYfjc7b-.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/sprites-EoMqAK-m.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/fairness-BK8ibLB9.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/host-93HbE24R.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/preload-BDgeBxMx.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/testTargets-DLBOsjjd.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/updates-wfDQx12v.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/updates-CutaA2aL.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/chevron-right-B3Y4yveX.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/copy-DIO8GGU5.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/eraser-CM__6-oi.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/puzzle-kd80Md6H.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/useFairness-BDDtBKXG.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/folder-open-CQ2hxGBA.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/loader-circle-D8FL5rsU.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/square-Dh1tmKD1.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/play-CcFo9AoV.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/plus-DdSs6V4a.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/search-BFHmtP5m.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/sparkles--3dffUup.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/square-dashed-DYbuqAIA.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/trash-2-HeXW68qW.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/upload-DX4BmLfR.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/users-CfXmvFOI.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/zap-C3Lxt25O.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/useTerrainTools-gbhyow5z.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/recoveryCopier-ZVWzIkaV.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/updateAtoms-Bs4CF7_g.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/releaseNotes-D_l1BA9x.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/linkAtoms-CQzzlykO.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/useLocationTools-D57w86t8.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/useUnitAssets-PK7Upekl.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/useTileset-C1ioxPHi.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/starfield-BCXVgeyn.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/useSpriteTools-IDOc8S5g.js">
+    <link rel="modulepreload" crossorigin href="/nightly/assets/UnitPreview-D8a8OVSs.js">
+    <link rel="stylesheet" crossorigin href="/nightly/assets/src-BrlQrLJT.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- The worker in front of the hosted editor only adds its card tags to a page with
+         this id in it (scm-js/cloudflare-link-previews): renaming it stops the cards. -->
+    <div id="boot-splash" role="presentation">
+      <div class="card">
+        <div class="center">
+          <h1>scm<span>JS</span></h1>
+          <div class="sub">StarCraft · Brood War</div>
+        </div>
+        <div class="bottom">
+          <div class="log"><div>Initializing renderer</div></div>
+          <div class="bar"></div>
+          <div class="foot">
+            <span class="version">v0.18.1-nightly</span>
+            <span class="author">by Jeany</span>
+          </div>
+          <div class="skip">click to skip</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

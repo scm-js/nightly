@@ -1,0 +1,1 @@
+import{U as e}from"./ui-tyQSi_2x.js";import{f as t}from"./i18n-DqSFfLtE.js";import{t as n}from"./DialogFrame-ujrll9Le.js";var r=e();function i({entry:e,title:i,icon:a}){return(0,r.jsx)(n,{dialogKey:e.key,title:i,icon:a,size:`sm`,children:(0,r.jsx)(`p`,{className:`hint`,children:t(`Open or create a map first.`)})})}export{i as t};

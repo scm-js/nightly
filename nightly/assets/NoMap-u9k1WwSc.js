@@ -1,0 +1,1 @@
+import{U as e}from"./ui-CIMDkItM.js";import{f as t}from"./i18n-BT0Ka4g7.js";import{t as n}from"./DialogFrame-MSX_s-AT.js";var r=e();function i({entry:e,title:i,icon:a}){return(0,r.jsx)(n,{dialogKey:e.key,title:i,icon:a,size:`sm`,children:(0,r.jsx)(`p`,{className:`hint`,children:t(`Open or create a map first.`)})})}export{i as t};
