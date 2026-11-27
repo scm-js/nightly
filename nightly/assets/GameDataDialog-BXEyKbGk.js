@@ -1,0 +1,1 @@
+import{n as e,t}from"./GameDataDialog-R4j8Qqkk.js";export{t as GameDataBody,e as GameDataDialog};
